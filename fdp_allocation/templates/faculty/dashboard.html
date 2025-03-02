@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - FDP Allocation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty_dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <div class="nav-brand"><i class="fas fa-graduation-cap"></i> FDP Allocation System</div>
+            <div class="nav-user">
+                <span class="welcome-text">Welcome, {{ current_user.name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <section class="dashboard-section available-fdps-section">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-list-alt"></i> Available FDP Programs</h2>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message %}
+                            {% set category, message = message %}
+                        {% else %}
+                            {% set category = 'info' %}  <!-- or any default category you want -->
+                        {% endif %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+                <div class="selection-instructions">
+                    <h3><i class="fas fa-info-circle"></i> Selection Instructions:</h3>
+                    <ul class="instructions-list">
+                        <li><i class="fas fa-check-square"></i> You can select up to 5 FDPs in order of preference.</li>
+                        <li><i class="fas fa-bullseye"></i>  Allocations are based on seat availability and your selection preference.</li>
+                        <li><i class="fas fa-star"></i> Your top selections increase your chances of allocation.</li>
+                    </ul>
+                </div>
+
+                <form action="{{ url_for('select_fdp') }}" method="POST" id="fdpSelectionForm">
+                    <div class="fdp-table-container">
+                        <table class="table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>FDP Name</th>
+                                    <th>Faculty in Charge</th>
+                                    <th>Seats Available</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fdp in available_fdps %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="fdp_ids[]" value="{{ fdp.id }}"
+                                               {% if fdp.id in selected_fdps|map(attribute='fdp_id')|list %}checked{% endif %}
+                                               onchange="handleSelection(this)">
+                                    </td>
+                                    <td>{{ fdp.name }}</td>
+                                    <td>{{ fdp.faculty_in_charge }}</td>
+                                    <td>{{ fdp.available_seats }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4">No FDPs currently available for selection. Please check back later.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="selection-summary">
+                        <h3><i class="fas fa-clipboard-list"></i> Your Current Selections (<span id="selectionCount">0</span> / 5):</h3>
+                        <ul id="selectedFDPsList" class="selection-list">
+                            {% for selection in selected_fdps %}
+                            <li>{{ selection.fdp.name }}</li>
+                            {% endfor %}
+                            {% if not selected_fdps %}
+                            <li id="noSelectionMessage">No FDPs selected yet.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitSelectionsButton" disabled>
+                            <i class="fas fa-paper-plane"></i> Submit Selections
+                        </button>
+                        <p class="selection-tip">Select at least one FDP to enable Submit button.</p>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Allocated FDPs Section (Placeholder - to be implemented later when allocation logic is ready) -->
+            <!--
+            <section id="allocated-fdps" class="dashboard-section allocated-fdps-section">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-check-circle"></i> Your Allocated FDPs</h2>
+                </div>
+                <div class="allocated-fdp-list">
+                    <p>Your allocated FDPs will be shown here once allocations are processed.</p>
+                    < !-- List of allocated FDPs will be displayed here -->
+                </div>
+            </section>
+           
+        </div>
+    </div>
+
+    <script>
+        let selectionLimit = 5;
+        let currentSelectionCount = {{ selected_fdps|length if selected_fdps else 0 }};
+
+        document.addEventListener('DOMContentLoaded', function() {
+             updateSelectionSummary(); // Initial update on page load to show count and disable button
+        });
+
+        function handleSelection(checkbox) {
+            const checkboxes = document.querySelectorAll('input[name="fdp_ids[]"]:checked');
+            if (checkboxes.length > selectionLimit) {
+                checkbox.checked = false;
+                alert(`You can only select up to ${selectionLimit} FDPs.`);
+                return;
+            }
+            updateSelectionSummary();
+        }
+
+        function updateSelectionSummary() {
+            const selectedList = document.getElementById('selectedFDPsList');
+            const selectionCountSpan = document.getElementById('selectionCount');
+            const noSelectionMessage = document.getElementById('noSelectionMessage');
+            const submitButton = document.getElementById('submitSelectionsButton');
+            selectedList.innerHTML = '';
+            let selectedFDPNames = [];
+
+            document.querySelectorAll('input[name="fdp_ids[]"]:checked').forEach(checkbox => {
+                const fdpName = checkbox.closest('tr').querySelector('td:nth-child(2)').textContent;
+                selectedFDPNames.push(fdpName);
+                const li = document.createElement('li');
+                li.textContent = fdpName;
+                selectedList.appendChild(li);
+            });
+
+            currentSelectionCount = selectedFDPNames.length;
+            selectionCountSpan.textContent = currentSelectionCount;
+
+            if (currentSelectionCount > 0) {
+                submitButton.disabled = false;
+                if (noSelectionMessage) noSelectionMessage.style.display = 'none'; // Hide 'No selection' message if selections are made
+            } else {
+                submitButton.disabled = true;
+                 if (noSelectionMessage) noSelectionMessage.style.display = 'block'; // Show 'No selection' message if no selections
+                else { // If no 'noSelectionMessage' li exists, create and append it. For initial page load when no selections yet exist and the message li is not rendered yet by jinja
+                     const li = document.createElement('li');
+                     li.id = 'noSelectionMessage';
+                     li.textContent = 'No FDPs selected yet.';
+                     selectedList.appendChild(li);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

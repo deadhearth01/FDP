@@ -1,0 +1,187 @@
+/* static/css/faculty_dashboard.css */
+
+/* General Dashboard Body Styles */
+.dashboard-body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f6f9; /* Light grey background */
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    width: 95%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Clip rounded corners properly */
+}
+
+/* Dashboard Navigation */
+.dashboard-nav {
+    background-color: #02716a; /* Primary color - deep teal */
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-brand {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.btn-logout {
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-logout:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dashboard Content */
+.dashboard-content {
+    padding: 20px;
+}
+
+.dashboard-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #333;
+}
+
+/* Alert Messages */
+.alert {
+    background-color: #ffe0b2; /* Light orange for alerts */
+    color: #d84315; /* Darker orange text */
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ffb74d; /* Medium orange border */
+}
+
+/* FDP Selection Container */
+.fdp-selection-container {
+    /* Add styles if needed */
+}
+
+.selection-instructions {
+    background-color: #e8f5e9; /* Very light green background */
+    border: 1px solid #c8e6c9; /* Light green border */
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #388e3c; /* Dark green text */
+}
+
+.selection-instructions h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.selection-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.fdp-table-container {
+    overflow-x: auto; /* Enable horizontal scrolling for tables if needed */
+    margin-bottom: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    min-width: 600px; /* Minimum width for table */
+}
+
+.table thead th {
+    background-color: #f0f0f0;
+    color: #555;
+    font-weight: bold;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f9f9f9; /* Even row background */
+}
+
+/* Selection Summary */
+.selection-summary {
+    background-color: #fff3e0; /* Very light orange background */
+    border: 1px solid #ffe0b2; /* Light orange border */
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #ef6c00; /* Darker orange text */
+}
+
+.selection-summary h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.selection-summary ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style-type: disc; /* Use discs for unordered list */
+}
+
+/* Submit Button */
+button.btn {
+    background-color: #02716a; /* Primary color for button */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button.btn:hover {
+    background-color: #015a54; /* Darker primary color on hover */
+}
+
+.admin-header {  /* Target Admin Header to add a custom color */
+    background-color: #d4edda; /* A lighter background color */
+    color: #155724; /* Darker text color for contrast */
+}
