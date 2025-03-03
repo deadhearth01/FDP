@@ -185,3 +185,56 @@ button.btn:hover {
     background-color: #d4edda; /* A lighter background color */
     color: #155724; /* Darker text color for contrast */
 }
+
+/* Consistent typography */
+body, h1, h2, h3, p {
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Flash message styling */
+.alert {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.alert-info {
+    background-color: #d9edf7;
+    color: #31708f;
+    border: 1px solid #bce8f1;
+}
+
+.alert-warning {
+    background-color: #fcf8e3;
+    color: #8a6d3b;
+    border: 1px solid #faebcc;
+}
+
+/* General button styling */
+.btn {
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.notification-area { margin: 20px 0; }
+.notification { padding: 10px; border-radius: 5px; }
+.alert-info { background: #d9edf7; color: #31708f; }
+.alert-warning { background: #fcf8e3; color: #8a6d3b; }
+.fdp-table-container { margin: 20px 0; }
+.selection-summary, .allocated-fdp-section { margin: 20px 0; }
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 15% auto; padding: 20px; width: 50%; border-radius: 5px; }
+.fdp-item { margin: 10px 0; }

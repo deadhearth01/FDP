@@ -421,7 +421,7 @@
     font-size: 0.85em;
     font-weight: bold;
     text-align: center;
-    color: var(--text-light); /* Light text on badges */
+    color: var(--text-dark); /* Light text on badges */
 }
 
 .status-badge.status-view {
@@ -756,3 +756,81 @@
     text-align: center;
 }
 
+/* Table adjustments for new columns */
+.data-table th, .data-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Specific column widths for new fields */
+.data-table th:nth-child(4), .data-table th:nth-child(5), .data-table th:nth-child(6) {
+    min-width: 120px; /* Ensures Start Date, End Date, and Resource Person columns are readable */
+}
+
+/* Allow wrapping for resource person column if the list is long */
+.data-table td:nth-child(6) {
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: 200px; /* Prevents excessive stretching; adjust as needed */
+}
+
+/* Modal form adjustments */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="date"],
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Ensure consistency with existing inputs */
+.form-group input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+/* Flash message styling (if not already defined) */
+.alert {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.alert-success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+}
+
+/* Status badge styling (if not already defined) */
+.status-badge {
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: rgb(255, 255, 255);
+}
+.status-badge1 {
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: rgb(14, 13, 13);
+}
+.status-view {
+    background-color: #f0ad4e; /* Example color for 'view' status */
+}
+
+.status-allocate {
+    background-color: #5cb85c; /* Example color for 'allocate' status */
+}

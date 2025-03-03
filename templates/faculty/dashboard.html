@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - FDP Allocation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty_dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Enhanced Styles for Improved UI/UX (unchanged from previous, with added styles for disabled FDPs) */
+        .dashboard-body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-nav {
+            background-color: #02716a;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand, .nav-user {
+            margin: 0 10px;
+        }
+
+        .nav-brand i, .btn-logout i {
+            margin-right: 8px;
+        }
+
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+
+        .btn-logout:hover {
+            background-color: #c0392b;
+        }
+
+        .dashboard-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-section {
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-header i {
+            margin-right: 10px;
+        }
+
+        .fdp-table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .fdp-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .fdp-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .seat-count {
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .btn-view-details {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn-view-details:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-primary {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn-primary:hover {
+            background-color: #219653;
+        }
+
+        .btn-primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .alert-info {
+            background-color: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        .notification {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .notification-area .notification {
+            display: block;
+        }
+
+        .selection-instructions, .selection-summary, .allocated-fdps-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .instructions-list, .selection-list, .allocated-fdp-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .instructions-list li, .selection-list li, .allocated-fdp-list li {
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .instructions-list li i, .selection-list li i, .allocated-fdp-list li i {
+            position: absolute;
+            left: 0;
+            color: #3498db;
+        }
+
+        .form-actions {
+            margin-top: 20px;
+        }
+
+        .selection-tip {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        .selection-limit-warning {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .previously-selected {
+            opacity: 0.7;
+            background-color: #f5f5f5;
+        }
+
+        .previously-selected input[type="checkbox"] {
+            display: none; /* Hide checkbox for previously selected FDPs */
+        }
+
+        .previously-selected .btn-view-details {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #e74c3c;
+        }
+
+        .close:hover {
+            color: #c0392b;
+        }
+
+        #fdpDetailsContent, #reselection-fdp-list {
+            margin-top: 20px;
+        }
+
+        #fdpDetailsContent p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        #reselection-fdp-list .fdp-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        #reselection-fdp-list .fdp-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+
+            .table {
+                font-size: 14px;
+            }
+
+            .table th, .table td {
+                padding: 8px;
+            }
+
+            .modal-content {
+                width: 90%;
+                margin: 10% auto;
+            }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <nav class="dashboard-nav">
+            <div class="nav-brand"><i class="fas fa-graduation-cap"></i> FDP Allocation System</div>
+            <div class="nav-user">
+                <span class="welcome-text">Welcome, {{ current_user.name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+            <section class="dashboard-section available-fdps-section">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-list-alt"></i> Faculty Dashboard</h2>
+                </div>
+
+                <!-- Flash Messages -->
+                <div id="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <!-- Notification Area -->
+                <div id="notification-area" class="notification-area">
+                    {% if notification %}
+                        <div class="notification {{ 'alert-info' if 'directly allocated' in notification else 'alert-warning' }}">
+                            {{ notification }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Selection Instructions -->
+                <div class="selection-instructions">
+                    <h3><i class="fas fa-info-circle"></i> Selection Instructions:</h3>
+                    <ul class="instructions-list">
+                        <li><i class="fas fa-check-square"></i> You can view all available FDPs, but you can only select up to <strong>3 FDPs</strong> in order of preference.</li>
+                        <li><i class="fas fa-lock"></i> FDPs you’ve previously selected or allocated cannot be reselected.</li>
+                        <li><i class="fas fa-bullseye"></i> Only the first 3 selected FDPs will be allocated based on availability.</li>
+                        <li><i class="fas fa-star"></i> If fewer than 3 are allocated, you’ll be prompted to reselect.</li>
+                    </ul>
+                </div>
+
+                <!-- Available FDPs Form -->
+                <form action="{{ url_for('select_fdp') }}" method="POST" id="fdpSelectionForm">
+                    <div class="fdp-table-container">
+                        <table class="table data-table" id="fdpTable">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>FDP Name</th>
+                                    <th>Faculty in Charge</th>
+                                    <th>Seats Available</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fdp in available_fdps %} <!-- List all available FDPs -->
+                                <tr data-fdp-id="{{ fdp.id }}"
+                                    {% if fdp.id in previously_selected_fdp_ids %}
+                                    class="previously-selected"
+                                    {% endif %}>
+                                    <td>
+                                        <input type="checkbox" name="fdp_ids[]" value="{{ fdp.id }}"
+                                               {% if fdp.id in selected_fdps|map(attribute='fdp_id')|list and 'allocated' not in allocated_fdps|map(attribute='fdp_id')|list %}checked{% endif %}
+                                               {% if fdp.id in previously_selected_fdp_ids %}disabled{% endif %}
+                                               onchange="handleSelection(this)">
+                                    </td>
+                                    <td>{{ fdp.name }}</td>
+                                    <td>{{ fdp.faculty_in_charge }}</td>
+                                    <td class="seat-count">{{ fdp.available_seats }}</td>
+                                    <td>{{ fdp.start_date.strftime('%Y-%m-%d') if fdp.start_date else 'N/A' }}</td>
+                                    <td>{{ fdp.end_date.strftime('%Y-%m-%d') if fdp.end_date else 'N/A' }}</td>
+                                    <td>
+                                        <button type="button" class="btn-view-details" onclick="showFDPDetails({{ fdp.id }})"
+                                                {% if fdp.id in previously_selected_fdp_ids %}disabled{% endif %}>View Details</button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="7">No FDPs currently available for selection.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Selection Limit Warning -->
+                    <div class="selection-limit-warning" id="selectionLimitWarning">
+                        You’ve reached the maximum of 3 FDPs. Only the first 3 selected will be allocated.
+                    </div>
+
+                    <!-- Current Selections -->
+                    <div class="selection-summary">
+                        <h3><i class="fas fa-clipboard-list"></i> Your Current Selections (<span id="selectionCount">{{ selected_fdps|length }}</span> / 3):</h3>
+                        <ul id="selectedFDPsList" class="selection-list">
+                            {% for selection in selected_fdps %}
+                            <li>{{ selection.fdp.name }} (Pending Allocation)</li>
+                            {% else %}
+                            <li id="noSelectionMessage">No FDPs selected yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitSelectionsButton" {% if not selected_fdps and not available_fdps %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane"></i> Submit Selections
+                        </button>
+                        <p class="selection-tip">Select at least one FDP to enable Submit button.</p>
+                    </div>
+                </form>
+
+                <!-- Allocated FDPs Section -->
+                <div class="allocated-fdps-section">
+                    <h3><i class="fas fa-check-circle"></i> Your Allocated FDPs</h3>
+                    <ul class="allocated-fdp-list">
+                        {% for allocation in allocated_fdps %}
+                        <li>{{ allocation.fdp.name }} (Allocated on {{ allocation.created_at.strftime('%Y-%m-%d') }})</li>
+                        {% else %}
+                        <li>No FDPs allocated yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Re-selection Modal -->
+    <div id="reselectionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('reselectionModal')">×</span>
+            <h2>Reselect FDPs</h2>
+            <p id="reselection-message"></p>
+            <form id="reselection-form" method="POST" action="{{ url_for('select_fdp') }}">
+                <div id="reselection-fdp-list" class="fdp-list"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit New Selections</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FDP Details Modal -->
+    <div id="fdpDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('fdpDetailsModal')">×</span>
+            <h2>FDP Details</h2>
+            <div id="fdpDetailsContent">
+                <!-- FDP details will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let selectionLimit = 3; // Only allow selecting up to 3 FDPs
+        let currentSelectionCount = {{ selected_fdps|length }};
+        let previouslySelectedFDPIds = {{ previously_selected_fdp_ids|tojson|safe }} || [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectionSummary();
+            startPolling(); // Start polling for real-time updates
+            disablePreviouslySelectedFDPs(); // Disable previously selected FDPs on load
+        });
+
+        function disablePreviouslySelectedFDPs() {
+            previouslySelectedFDPIds.forEach(fdpId => {
+                const row = document.querySelector(`tr[data-fdp-id="${fdpId}"]`);
+                if (row) {
+                    row.classList.add('previously-selected');
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    const viewButton = row.querySelector('.btn-view-details');
+                    if (checkbox) checkbox.disabled = true;
+                    if (viewButton) viewButton.disabled = true;
+                }
+            });
+        }
+
+        function handleSelection(checkbox) {
+            const checkboxes = document.querySelectorAll('input[name="fdp_ids[]"]:checked');
+            if (checkboxes.length > selectionLimit) {
+                checkbox.checked = false;
+                document.getElementById('selectionLimitWarning').style.display = 'block';
+                setTimeout(() => document.getElementById('selectionLimitWarning').style.display = 'none', 5000);
+                alert(`You can only select up to ${selectionLimit} FDPs. Only the first ${selectionLimit} will be allocated.`);
+                return;
+            }
+            updateSelectionSummary();
+            document.getElementById('selectionLimitWarning').style.display = 'none';
+        }
+
+        function updateSelectionSummary() {
+            const selectedList = document.getElementById('selectedFDPsList');
+            const selectionCountSpan = document.getElementById('selectionCount');
+            const noSelectionMessage = document.getElementById('noSelectionMessage');
+            const submitButton = document.getElementById('submitSelectionsButton');
+            selectedList.innerHTML = '';
+            let selectedFDPNames = [];
+
+            document.querySelectorAll('input[name="fdp_ids[]"]:checked').forEach(checkbox => {
+                if (!checkbox.disabled) { // Only count enabled (not previously selected) checkboxes
+                    const fdpName = checkbox.closest('tr').querySelector('td:nth-child(2)').textContent;
+                    selectedFDPNames.push(fdpName);
+                    const li = document.createElement('li');
+                    li.textContent = `${fdpName} (Pending Allocation)`;
+                    selectedList.appendChild(li);
+                }
+            });
+
+            currentSelectionCount = selectedFDPNames.length;
+            selectionCountSpan.textContent = currentSelectionCount;
+
+            if (currentSelectionCount > 0) {
+                submitButton.disabled = false;
+                if (noSelectionMessage) noSelectionMessage.style.display = 'none';
+            } else {
+                submitButton.disabled = true;
+                if (noSelectionMessage) noSelectionMessage.style.display = 'block';
+                else {
+                    const li = document.createElement('li');
+                    li.id = 'noSelectionMessage';
+                    li.textContent = 'No FDPs selected yet.';
+                    selectedList.appendChild(li);
+                }
+            }
+        }
+
+        // Modal Functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Display Flash Messages
+        function displayFlashMessage(message, category) {
+            const messageContainer = document.getElementById('flash-messages');
+            if (messageContainer) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `alert alert-${category}`;
+                messageDiv.textContent = message;
+                messageContainer.appendChild(messageDiv);
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Handle FDP Selection Form Submission
+        document.getElementById('fdpSelectionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = this;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayFlashMessage(data.message, 'success');
+                    window.location.reload();
+                } else {
+                    displayFlashMessage(data.message, 'warning');
+                    if (data.needs_reselection) {
+                        document.getElementById('reselection-message').textContent = data.message;
+                        fetchAvailableFDPsForReselection(data.allocated);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting selections:', error);
+                displayFlashMessage('An error occurred. Please try again.', 'error');
+            });
+        });
+
+        // Fetch Available FDPs for Reselection
+        function fetchAvailableFDPsForReselection(alreadyAllocated) {
+            fetch('/faculty/dashboard')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const fdpList = document.getElementById('reselection-fdp-list');
+                    fdpList.innerHTML = '';
+                    const availableFDPs = doc.querySelectorAll('.fdp-table-container tr');
+                    availableFDPs.forEach(row => {
+                        const fdpName = row.querySelector('td:nth-child(2)')?.textContent.trim();
+                        if (fdpName && !alreadyAllocated.includes(fdpName)) {
+                            const checkbox = row.querySelector('input[type="checkbox"]').cloneNode(true);
+                            checkbox.checked = false;
+                            const label = document.createElement('label');
+                            label.htmlFor = checkbox.id;
+                            label.textContent = `${fdpName} (${row.querySelector('td:nth-child(4)').textContent.trim()} seats)`;
+                            const div = document.createElement('div');
+                            div.className = 'fdp-item';
+                            div.appendChild(checkbox);
+                            div.appendChild(label);
+                            fdpList.appendChild(div);
+                        }
+                    });
+                    if (fdpList.children.length > 0) {
+                        showModal('reselectionModal');
+                    } else {
+                        displayFlashMessage('No additional FDPs available. Please wait for the next batch.', 'warning');
+                    }
+                })
+                .catch(error => console.error('Error fetching FDPs for reselection:', error));
+        }
+
+        // Handle Reselection Form Submission
+        document.getElementById('reselection-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = this;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayFlashMessage(data.message, 'success');
+                    closeModal('reselectionModal');
+                    window.location.reload();
+                } else {
+                    displayFlashMessage(data.message, 'warning');
+                    if (data.needs_reselection) {
+                        document.getElementById('reselection-message').textContent = data.message;
+                        fetchAvailableFDPsForReselection(data.allocated);
+                    } else {
+                        closeModal('reselectionModal');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting reselection:', error);
+                displayFlashMessage('An error occurred. Please try again.', 'error');
+            });
+        });
+
+        // Polling for Real-Time Updates
+        function startPolling() {
+            setInterval(() => {
+                fetch('/faculty/dashboard')
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newRows = doc.querySelectorAll('.fdp-table-container tr');
+                        const currentRows = document.querySelectorAll('.fdp-table-container tr');
+
+                        newRows.forEach(newRow => {
+                            const fdpId = newRow.getAttribute('data-fdp-id');
+                            const currentRow = document.querySelector(`tr[data-fdp-id="${fdpId}"]`);
+                            if (currentRow) {
+                                const newSeats = newRow.querySelector('.seat-count')?.textContent;
+                                const currentSeats = currentRow.querySelector('.seat-count')?.textContent;
+                                if (newSeats !== currentSeats) {
+                                    currentRow.querySelector('.seat-count').textContent = newSeats;
+                                    if (parseInt(newSeats) === 0) {
+                                        currentRow.querySelector('input[type="checkbox"]').disabled = true;
+                                        currentRow.querySelector('input[type="checkbox"]').checked = false;
+                                        displayFlashMessage(`FDP "${currentRow.querySelector('td:nth-child(2)').textContent}" is no longer available. Please reselect if needed.`, 'warning');
+                                        updateSelectionSummary(); // Update selection summary when seats run out
+                                    }
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error polling FDPs:', error));
+            }, 5000); // Poll every 5 seconds
+        }
+
+        // Show FDP Details in Modal
+        function showFDPDetails(fdpId) {
+            fetch(`/faculty/fdp/get/${fdpId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        const content = `
+                            <p><strong>Name:</strong> ${data.name}</p>
+                            <p><strong>Faculty in Charge:</strong> ${data.faculty_in_charge}</p>
+                            <p><strong>Description:</strong> ${data.description || 'N/A'}</p>
+                            <p><strong>Start Date:</strong> ${data.start_date || 'N/A'}</p>
+                            <p><strong>End Date:</strong> ${data.end_date || 'N/A'}</p>
+                            <p><strong>Resource Person:</strong> ${data.resource_person ? data.resource_person.join(', ') : 'N/A'}</p>
+                            <p><strong>Total Seats:</strong> ${data.total_seats}</p>
+                            <p><strong>Available Seats:</strong> ${data.available_seats}</p>
+                        `;
+                        document.getElementById('fdpDetailsContent').innerHTML = content;
+                        showModal('fdpDetailsModal');
+                    } else {
+                        alert('Could not fetch FDP details.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching FDP details:', error);
+                    alert('Error fetching FDP details.');
+                });
+        }
+
+        // Close Modal on Outside Click
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
