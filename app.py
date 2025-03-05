@@ -718,4 +718,4 @@ if __name__ == '__main__':
             db.session.commit()
             print("Default admin user created: username='admin', password='adminpassword' (Change this ASAP!)")
     
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
