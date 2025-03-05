@@ -20,14 +20,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USERNAME = 'dgadamse2@gitam.in'
-SMTP_PASSWORD = 'emroquqcpklfnpoj'
+SMTP_PASSWORD = 'your-smtp-password-here'  # Update with your actual SMTP password
 FROM_EMAIL = 'dgadamse2@gitam.in'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Models (unchanged)
+# Models (unchanged from your provided code)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -127,7 +127,53 @@ def send_email_async(user, subject, content, is_allocation=False, fdp=None):
     thread.start()
     print(f"Started email thread for {subject} to {user.email}")
 
-# Migration function
+# New function to send allocation summary email
+def send_allocation_summary_email(user, allocated_fdps, failed_fdps):
+    subject = "Your FDP Allocation Update"
+    content = f"""
+    Hello {user.name},
+
+    Your FDP selections have been processed. Here is the status:
+
+    """
+    if allocated_fdps:
+        content += "Allocated FDPs:\n"
+        for s in allocated_fdps:
+            content += f"- {s.fdp.name}\n"
+    else:
+        content += "No FDPs were allocated.\n"
+
+    if failed_fdps:
+        content += "\nUnfortunately, the following FDPs could not be allocated:\n"
+        for failed in failed_fdps:
+            content += f"- {failed['fdp_name']}: {failed['reason']}\n"
+
+    content += """
+    Best regards,
+    The FDP Allocation Team
+    """
+    send_email_async(user, subject, content, is_allocation=True)
+
+# New function to send final allocation email when starting a new batch
+def send_final_allocation_email(user, allocated_fdps):
+    subject = "Final FDP Allocations for Previous Batch"
+    content = f"""
+    Hello {user.name},
+
+    The FDP allocation process for the previous batch has concluded. Here are your allocated FDPs:
+
+    """
+    for s in allocated_fdps:
+        content += f"- {s.fdp.name}\n"
+
+    content += """
+    Thank you for participating.
+    Best regards,
+    The FDP Allocation Team
+    """
+    send_email_async(user, subject, content, is_allocation=True)
+
+# Migration function (unchanged)
 def migrate_database():
     try:
         db.session.execute(text("SELECT version_id FROM fdp LIMIT 1"))
@@ -164,7 +210,7 @@ def migrate_database():
         db.session.commit()
         print("Added email column to user table.")
 
-# Common Routes
+# Common Routes (unchanged)
 @app.route('/')
 def login():
     return render_template('login.html')
@@ -229,7 +275,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# Admin Routes
+# Admin Routes (only `/admin/start_new_batch` modified, others unchanged)
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
@@ -483,6 +529,18 @@ def previous_allocations():
 def start_new_batch():
     if not current_user.is_admin:
         return jsonify({'error': 'Unauthorized'}), 403
+
+    # Get users with current allocations and send final allocation emails
+    users_with_allocations = db.session.query(User).join(Selection, User.id == Selection.user_id).filter(
+        Selection.is_current == True, Selection.status == 'allocated'
+    ).distinct().all()
+
+    for user in users_with_allocations:
+        allocated_fdps = Selection.query.filter_by(user_id=user.id, is_current=True, status='allocated').all()
+        if allocated_fdps:
+            send_final_allocation_email(user, allocated_fdps)
+
+    # Move current selections to PreviousSelection
     current_selections = Selection.query.filter_by(is_current=True).all()
     for selection in current_selections:
         prev_selection = PreviousSelection(
@@ -497,7 +555,7 @@ def start_new_batch():
     flash('New batch started! Previous selections moved to history.', 'success')
     return jsonify({'success': True, 'message': 'New batch started!'})
 
-# Faculty Routes
+# Faculty Routes (only `/faculty/select_fdp` modified significantly)
 @app.route('/faculty/dashboard')
 @login_required
 def faculty_dashboard():
@@ -528,21 +586,8 @@ def faculty_dashboard():
                 fdp.version_id += 1
                 db.session.add(selection)
                 allocated_fdps.append(selection)
-                subject = "FDP Allocation Confirmation"
-                content = f"""
-                Hello {current_user.name},
-                Congratulations! You have been allocated the following FDP:
-                - FDP Name: {fdp.name}
-                - Faculty in Charge: {fdp.faculty_in_charge}
-                - Start Date: {fdp.start_date.strftime('%Y-%m-%d') if fdp.start_date else 'N/A'}
-                - End Date: {fdp.end_date.strftime('%Y-%m-%d') if fdp.end_date else 'N/A'}
-                - Resource Person: {', '.join(json.loads(fdp.resource_person)) if fdp.resource_person else 'N/A'}
-                - Allocation Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                Best regards,
-                The FDP Allocation Team
-                """
-                send_email_async(current_user, subject, content, is_allocation=True, fdp=fdp)
         db.session.commit()
+        send_allocation_summary_email(current_user, allocated_fdps, [])
         notification = "Only three FDPs exist. They have been directly allocated to you."
     elif available_fdp_count == 0:
         notification = "No FDPs are currently available. Please wait for the next batch."
@@ -555,7 +600,7 @@ def faculty_dashboard():
         selected_fdps=selected_fdps,
         allocated_fdps=allocated_fdps,
         notification=notification,
-        previously_selected_fdp_ids=list(previously_selected_fdp_ids)  # Pass the list to the template
+        previously_selected_fdp_ids=list(previously_selected_fdp_ids)
     )
 
 @app.route('/faculty/select_fdp', methods=['POST'])
@@ -564,84 +609,72 @@ def select_fdp():
     if current_user.is_admin:
         return jsonify({'error': 'Unauthorized'}), 403
 
-    # Get selected FDP IDs, but limit processing to a maximum of 3
-    fdp_ids = request.form.getlist('fdp_ids[]')
+    # Get ordered FDP IDs from the form (assuming frontend sends ordered_fdp_ids)
+    ordered_fdp_str = request.form.get('ordered_fdp_ids', '')
+    if ordered_fdp_str:
+        fdp_ids = [int(id) for id in ordered_fdp_str.split(',') if id.isdigit()]
+    else:
+        fdp_ids = [int(id) for id in request.form.getlist('fdp_ids[]') if id.isdigit()]
+
     if not fdp_ids:
         return jsonify({'success': False, 'message': 'Please select at least one FDP'})
 
-    # Limit the number of FDPs processed to 3 (or fewer if fewer are selected)
-    max_fdps = min(3, len(fdp_ids))  # Ensure we only process up to 3 FDPs
-    if len(fdp_ids) > 5:
-        return jsonify({'success': False, 'message': 'You can select a maximum of 5 FDPs, but only 3 will be allocated'})
+    # Process only the first 3 FDPs
+    fdp_ids_to_process = fdp_ids[:3]
 
     completed_fdp_ids = [cf.fdp_id for cf in current_user.completed_fdps]
     active_selections = [s.fdp_id for s in Selection.query.filter_by(user_id=current_user.id, is_current=True).all()]
     previous_selections = [ps.fdp_id for ps in PreviousSelection.query.filter_by(user_id=current_user.id).all()]
-
-    # Combine all previously selected/allocated FDP IDs to prevent reselection
     previously_selected_fdp_ids = set(completed_fdp_ids + active_selections + previous_selections)
 
+    # Clear existing selections
     Selection.query.filter_by(user_id=current_user.id, is_current=True).delete()
+
     allocated_fdps = []
-    conflicted = False
+    failed_fdps = []
 
-    # Only process up to 3 valid, non-previously-selected FDPs
-    for fdp_id in fdp_ids[:max_fdps]:
-        fdp_id = int(fdp_id)
-        fdp = FDP.query.filter_by(id=fdp_id).first()
+    # Process each selected FDP
+    for fdp_id in fdp_ids_to_process:
+        fdp = FDP.query.get(fdp_id)
         if not fdp:
-            conflicted = True
+            failed_fdps.append({'fdp_name': 'Unknown', 'reason': 'FDP not found'})
             continue
-
-        # Check if this FDP was previously selected or allocated by this user
         if fdp_id in previously_selected_fdp_ids:
-            conflicted = True
+            failed_fdps.append({'fdp_name': fdp.name, 'reason': 'Previously selected or completed'})
             continue
+        if fdp.available_seats <= 0:
+            failed_fdps.append({'fdp_name': fdp.name, 'reason': 'No seats available'})
+            continue
+        # Allocate the FDP
+        fdp.available_seats -= 1
+        fdp.version_id += 1
+        selection = Selection(user_id=current_user.id, fdp_id=fdp.id, status='allocated', is_current=True)
+        db.session.add(selection)
+        allocated_fdps.append(selection)
 
-        if fdp.available_seats > 0 and fdp.id not in completed_fdp_ids:
-            try:
-                # Only decrease seats and allocate if we're within the 3-FDP limit and FDP is not previously selected
-                fdp.available_seats -= 1
-                fdp.version_id += 1
-                selection = Selection(user_id=current_user.id, fdp_id=fdp.id, status='allocated', is_current=True)
-                db.session.add(selection)
-                allocated_fdps.append(selection)
-
-                subject = "FDP Allocation Confirmation"
-                content = f"""
-                Hello {current_user.name},
-                Congratulations! You have been allocated the following FDP:
-                - FDP Name: {fdp.name}
-                - Faculty in Charge: {fdp.faculty_in_charge}
-                - Start Date: {fdp.start_date.strftime('%Y-%m-%d') if fdp.start_date else 'N/A'}
-                - End Date: {fdp.end_date.strftime('%Y-%m-%d') if fdp.end_date else 'N/A'}
-                - Resource Person: {', '.join(json.loads(fdp.resource_person)) if fdp.resource_person else 'N/A'}
-                - Allocation Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                Best regards,
-                The FDP Allocation Team
-                """
-                send_email_async(current_user, subject, content, is_allocation=True, fdp=fdp)
-                db.session.commit()
-            except:
-                db.session.rollback()
-                conflicted = True
-                break
-        else:
-            conflicted = True
-
-    if conflicted:
+    try:
+        db.session.commit()
+        # Send a single summary email after all allocations
+        send_allocation_summary_email(current_user, allocated_fdps, failed_fdps)
+    except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': 'One or more selected FDPs are no longer available, previously selected, or invalid. Please reselect.',
-            'needs_reselection': True,
-            'allocated': [s.fdp.name for s in allocated_fdps]
-        })
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
-    if len(allocated_fdps) == 0:
+    # Check if reselection is needed
+    available_fdps_left = FDP.query.filter(and_(FDP.available_seats > 0, ~FDP.id.in_(completed_fdp_ids))).count()
+
+    if len(allocated_fdps) < 3 and available_fdps_left > 0:
         return jsonify({
             'success': False,
-            'message': 'No FDPs available or valid for allocation. Please wait for the next batch.',
+            'message': f'Only {len(allocated_fdps)} FDPs allocated. Please reselect from remaining options.',
+            'needs_reselection': True,
+            'allocated': [s.fdp.name for s in allocated_fdps],
+            'failed': failed_fdps
+        })
+    elif len(allocated_fdps) == 0:
+        return jsonify({
+            'success': False,
+            'message': 'No FDPs could be allocated. Please try again.',
             'needs_reselection': False
         })
     else:
@@ -649,9 +682,10 @@ def select_fdp():
         return jsonify({
             'success': True,
             'message': 'Your FDP selections submitted and allocated successfully!',
-            'allocated': [s.fdp.name for s in allocated_fdps]
+            'allocated': [s.fdp.name for s in allocated_fdps],
+            'failed': failed_fdps
         })
-    
+
 @app.route('/faculty/fdp/get/<int:fdp_id>')
 @login_required
 def get_fdp_details(fdp_id):
@@ -676,7 +710,7 @@ if __name__ == '__main__':
             default_admin = User(
                 username='admin',
                 password=generate_password_hash('adminpassword'),
-                email='admin@example.com',
+                email='cryptokong1@gmail.com',
                 is_admin=True,
                 name='Admin User'
             )
@@ -684,5 +718,4 @@ if __name__ == '__main__':
             db.session.commit()
             print("Default admin user created: username='admin', password='adminpassword' (Change this ASAP!)")
     
-    # Change this line
     app.run(host='0.0.0.0', port=8080, debug=True)

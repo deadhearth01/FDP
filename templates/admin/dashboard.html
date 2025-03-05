@@ -499,10 +499,7 @@
             const faculty = {{ faculty_list|tojson }}.find(f => f.id === facultyId);
             if (faculty) {
                 const content = `
-                    <p><strong>Name:</strong> ${faculty.name}</p>
-                    <p><strong>Department:</strong> ${faculty.department}</p>
-                    <p><strong>Username:</strong> ${faculty.username}</p>
-                    <p><strong>Email:</strong> ${faculty.email}</p> <!-- Added email -->
+ 
                     <p><strong>Allocated FDPs:</strong></p>
                     <ul>
                         ${faculty.allocated_fdps.map(fdp => `
