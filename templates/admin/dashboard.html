@@ -286,7 +286,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal('addFDPModal')">×</span>
             <h2>Add New FDP</h2>
-            <form action="{{ url_for('add_fdp') }}" method="POST" class="modal-form">
+            <form action="{{ url_for('admin_add_fdp') }}" method="POST" class="modal-form">
                 <div class="form-group">
                     <label for="fdp-name">FDP Name</label>
                     <input type="text" id="fdp-name" name="name" required>
