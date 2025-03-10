@@ -558,7 +558,7 @@ def faculty_dashboard():
     if current_user.is_admin:
         return redirect(url_for('admin_dashboard'))
 
-    all_fdps = FDP.query.all()
+    all_fdps = FDP.query.filter_by(status='allocate').all()
     completed_fdp_ids = [cf.fdp_id for cf in current_user.completed_fdps]
     current_selections = Selection.query.filter_by(user_id=current_user.id, is_current=True).all()
     selected_fdp_ids = [s.fdp_id for s in current_selections]
